@@ -84,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white, // muda a cor do texto
                         backgroundColor: Colors.deepPurple,
                         minimumSize: const Size.fromHeight(50),
                       ),
