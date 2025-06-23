@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:badges/badges.dart' as badges;
+
 import 'clientes_screen.dart';
 import 'agenda_screen.dart';
 import 'notificacoes_screen.dart';
@@ -13,6 +16,43 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool isDarkMode = false;
 
+  String usuarioNome = '';
+  String usuarioEmail = '';
+  String usuarioFuncao = '';
+  int notificacoesPendentes = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarDadosUsuario();
+    _carregarNotificacoesPendentes();
+  }
+
+  Future<void> _carregarDadosUsuario() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      usuarioNome = prefs.getString('usuarioNome') ?? '';
+      usuarioEmail = prefs.getString('usuarioEmail') ?? '';
+      usuarioFuncao = prefs.getString('usuarioFuncao') ?? '';
+    });
+  }
+
+  Future<void> _carregarNotificacoesPendentes() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      notificacoesPendentes = prefs.getInt('notificacoesPendentes') ?? 5; // valor de exemplo
+    });
+
+    // Se quiser buscar de uma API:
+    // final response = await http.get(Uri.parse('http://.../api/notificacoes/pendentes'));
+    // if (response.statusCode == 200) {
+    //   final data = jsonDecode(response.body);
+    //   setState(() {
+    //     notificacoesPendentes = data['quantidade'] ?? 0;
+    //   });
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,6 +66,26 @@ class _HomeScreenState extends State<HomeScreen> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Início'),
+          actions: [
+            badges.Badge(
+              position: badges.BadgePosition.topEnd(top: 2, end: 2),
+              showBadge: notificacoesPendentes > 0,
+              badgeContent: Text(
+                notificacoesPendentes.toString(),
+                style: const TextStyle(color: Colors.white, fontSize: 10),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.notifications),
+                tooltip: 'Notificações',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificacoesScreen()),
+                  ).then((_) => _carregarNotificacoesPendentes());
+                },
+              ),
+            ),
+          ],
         ),
         drawer: Drawer(
           child: ListView(
@@ -36,16 +96,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 leading: const Icon(Icons.people),
                 title: const Text('Clientes'),
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => ClientesScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ClientesScreen()),
+                  );
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.calendar_today),
                 title: const Text('Agenda'),
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const AgendaScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AgendaScreen()),
+                  );
                 },
               ),
               ListTile(
@@ -53,9 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Notificações'),
                 onTap: () {
                   Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const NotificacoesScreen()));
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificacoesScreen()),
+                  ).then((_) => _carregarNotificacoesPendentes());
                 },
               ),
               const Divider(),
@@ -74,8 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: const Text('Sair'),
                 onTap: () {
                   Navigator.popUntil(context, (route) => route.isFirst);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text("Você saiu (simulação).")));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Você saiu (simulação).")),
+                  );
                 },
               ),
             ],
@@ -94,11 +159,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildUserHeader() {
     return UserAccountsDrawerHeader(
       decoration: const BoxDecoration(color: Colors.deepPurple),
-      accountName: const Text("Evandro Ragonha"),
-      accountEmail: const Text("evandro@vila11.com.br"),
+      accountName: Text(usuarioNome.isNotEmpty ? '$usuarioNome ($usuarioFuncao)' : 'Usuário'),
+      accountEmail: Text(usuarioEmail),
       currentAccountPicture: const CircleAvatar(
         backgroundImage: NetworkImage(
-            'https://avatars.githubusercontent.com/u/583231?v=4'), // GitHub Octocat
+          'https://avatars.githubusercontent.com/u/583231?v=4',
+        ),
       ),
     );
   }

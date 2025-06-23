@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:clientes_app/screens/login_screen.dart';
+import 'package:clientes_app/screens/home_screen.dart' as home_screen;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('pt_BR', null); // <- Isso é o que resolve
-  runApp(const ClientesApp());
+  await initializeDateFormatting('pt_BR', null); // ou o locale que você usa
+  runApp(const MyApp());
 }
 
-class ClientesApp extends StatelessWidget {
-  const ClientesApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Assinatura in loco',
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        useMaterial3: true,
-      ),
-      home: const LoginScreen(), // 👉 Começa pela tela de login
-      debugShowCheckedModeBanner: false,
+      title: 'Clientes App',
+      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      home: const LoginScreen(),
+      routes: {
+        '/home': (context) => const home_screen.HomeScreen(),
+      },
     );
   }
 }
