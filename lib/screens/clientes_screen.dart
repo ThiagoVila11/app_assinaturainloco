@@ -90,7 +90,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
                           itemBuilder: (context, index) {
                             return ClienteCard(
                               cliente: _clientesFiltrados[index],
-                              onFinalizado: _recarregarClientes, // importante!
+                              onFinalizado: _recarregarClientes,
                             );
                           },
                         ),
@@ -99,6 +99,19 @@ class _ClientesScreenState extends State<ClientesScreen> {
             );
           }
         },
+      ),
+
+      // Botão para adicionar novo cliente
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final novoClienteAdicionado = await Navigator.pushNamed(context, '/novo-cliente');
+          if (novoClienteAdicionado == true) {
+            _recarregarClientes();
+          }
+        },
+        backgroundColor: Colors.deepPurple,
+        child: const Icon(Icons.add),
+        tooltip: 'Adicionar Cliente',
       ),
     );
   }

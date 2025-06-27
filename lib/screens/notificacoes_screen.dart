@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/notificacao.dart';
 import '../services/notificacao_service.dart';
 
@@ -23,6 +24,42 @@ class _NotificacoesScreenState extends State<NotificacoesScreen> {
     return DateFormat('dd/MM/yyyy HH:mm', 'pt_BR').format(data);
   }
 
+  Future<void> _abrirLink(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível abrir o link: $url')),
+      );
+    }
+  }
+
+  Widget _selectableDescricaoOuLink(String descricao) {
+    final urlRegex = RegExp(
+      r'((http|https):\/\/)?([\w\-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/\S*)?',
+      caseSensitive: false,
+    );
+
+    final match = urlRegex.firstMatch(descricao);
+
+    if (match != null) {
+      final url = descricao.contains('http') ? descricao : 'https://$descricao';
+      return InkWell(
+        onTap: () => _abrirLink(url),
+        child: Text(
+          descricao,
+          style: const TextStyle(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      );
+    } else {
+      return SelectableText(descricao);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +80,9 @@ class _NotificacoesScreenState extends State<NotificacoesScreen> {
               itemBuilder: (context, index) {
                 final n = notificacoes[index];
                 return ListTile(
-                  leading: Icon(n.lido ? Icons.notifications : Icons.notifications_active),
+                  leading: Icon(
+                    n.lido ? Icons.notifications : Icons.notifications_active,
+                  ),
                   title: Text(n.titulo),
                   subtitle: Text(formatDate(n.data)),
                   trailing: const Icon(Icons.chevron_right),
@@ -58,8 +97,9 @@ class _NotificacoesScreenState extends State<NotificacoesScreen> {
                           children: [
                             Text('Data: ${formatDate(n.data)}'),
                             const SizedBox(height: 10),
-                            Text('Descrição:'),
-                            SelectableText(n.descricao),
+                            const Text('Descrição:'),
+                            const SizedBox(height: 4),
+                            _selectableDescricaoOuLink(n.descricao),
                           ],
                         ),
                         actions: [

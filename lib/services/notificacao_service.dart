@@ -1,11 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/notificacao.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class NotificacaoService {
-  static const String url = 'http://192.168.3.37:8000/api/notificacoes/'; //'https://127.0.0.1:8000/api/notificacoes';
-
   static Future<List<Notificacao>> fetchNotificacoes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final consultorId = prefs.getInt('consultorId');
+
+    if (consultorId == null) {
+      throw Exception('Usuário não logado.');
+    }
+
+    final String url = 'http://192.168.3.37:8000/api/$consultorId/notificacoes/';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "510971988278",
+    "project_id": "assinaturainloco",
+    "storage_bucket": "assinaturainloco.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510971988278:android:89807ef459e5050881cb97",
+        "android_client_info": {
+          "package_name": "com.example.app_push"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDt9ltv_APb-7X4JaJ8KdFEkaF6qm5cBBg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

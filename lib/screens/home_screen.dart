@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:badges/badges.dart' as badges;
 
 import 'clientes_screen.dart';
 import 'agenda_screen.dart';
 import 'notificacoes_screen.dart';
+import 'precliente_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,13 +22,13 @@ class _HomeScreenState extends State<HomeScreen> {
   String usuarioNome = '';
   String usuarioEmail = '';
   String usuarioFuncao = '';
+  int consultorId = 0;
   int notificacoesPendentes = 0;
 
   @override
   void initState() {
     super.initState();
     _carregarDadosUsuario();
-    _carregarNotificacoesPendentes();
   }
 
   Future<void> _carregarDadosUsuario() async {
@@ -34,23 +37,33 @@ class _HomeScreenState extends State<HomeScreen> {
       usuarioNome = prefs.getString('usuarioNome') ?? '';
       usuarioEmail = prefs.getString('usuarioEmail') ?? '';
       usuarioFuncao = prefs.getString('usuarioFuncao') ?? '';
+      consultorId = prefs.getInt('consultorId') ?? 0;
     });
+
+    if (consultorId > 0) {
+      _carregarNotificacoesPendentes();
+    }
   }
 
   Future<void> _carregarNotificacoesPendentes() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      notificacoesPendentes = prefs.getInt('notificacoesPendentes') ?? 5; // valor de exemplo
-    });
+    final url = Uri.parse('http://192.168.3.37:8000/api/$consultorId/notificacoes/');
 
-    // Se quiser buscar de uma API:
-    // final response = await http.get(Uri.parse('http://.../api/notificacoes/pendentes'));
-    // if (response.statusCode == 200) {
-    //   final data = jsonDecode(response.body);
-    //   setState(() {
-    //     notificacoesPendentes = data['quantidade'] ?? 0;
-    //   });
-    // }
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        final notificacoesNaoLidas = data.where((n) => n['lido'] == false).length;
+
+        setState(() {
+          notificacoesPendentes = notificacoesNaoLidas;
+        });
+      } else {
+        print('Erro ao buscar notificações: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao carregar notificações: $e');
+    }
   }
 
   @override
@@ -92,6 +105,16 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.zero,
             children: [
               _buildUserHeader(),
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Pré-Clientes'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => PreclientesScreen()),
+                  );
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.people),
                 title: const Text('Clientes'),
@@ -159,7 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildUserHeader() {
     return UserAccountsDrawerHeader(
       decoration: const BoxDecoration(color: Colors.deepPurple),
-      accountName: Text(usuarioNome.isNotEmpty ? '$usuarioNome ($usuarioFuncao)' : 'Usuário'),
+      accountName: Text(usuarioNome.isNotEmpty
+          ? '$usuarioNome ($usuarioFuncao) ($consultorId)'
+          : 'Usuário'),
       accountEmail: Text(usuarioEmail),
       currentAccountPicture: const CircleAvatar(
         backgroundImage: NetworkImage(

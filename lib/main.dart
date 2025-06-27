@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:clientes_app/screens/login_screen.dart';
 import 'package:clientes_app/screens/home_screen.dart' as home_screen;
+import 'screens/novo_cliente_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
       home: const LoginScreen(),
       routes: {
         '/home': (context) => const home_screen.HomeScreen(),
+        '/novo-cliente': (context) => NovoClienteScreen(),
       },
     );
   }

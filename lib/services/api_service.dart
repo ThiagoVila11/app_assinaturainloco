@@ -14,4 +14,24 @@ class ApiService {
       throw Exception('Erro ao carregar clientes');
     }
   }
+  
+  static Future<void> addCliente(Cliente cliente) async {
+    final response = await http.post(
+      Uri.parse('http://192.168.3.37:8000/api/clientes/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'nome': cliente.nome,
+        'cpf': cliente.cpf,
+        'score': cliente.score,
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Erro ao adicionar cliente: ${response.body}');
+    }
 }
+
+}
+
+
+

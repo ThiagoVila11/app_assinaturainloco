@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:table_calendar/table_calendar.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AgendaScreen extends StatefulWidget {
   const AgendaScreen({super.key});
@@ -14,26 +15,43 @@ class _AgendaScreenState extends State<AgendaScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   List<Map<String, dynamic>> _eventos = [];
+  int? consultorId;
 
   @override
   void initState() {
     super.initState();
     _selectedDay = _focusedDay;
-    _buscarEventos();
+    _carregarConsultorId();
+  }
+
+  Future<void> _carregarConsultorId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('consultorId');
+
+    if (id != null) {
+      setState(() {
+        consultorId = id;
+      });
+      _buscarEventos();
+    } else {
+      print("consultorId não encontrado na sessão.");
+    }
   }
 
   Future<void> _buscarEventos() async {
-    final url = Uri.parse('http://192.168.3.37:8002/api/agendamentos/');
+    if (consultorId == null) return;
+
+    final url = Uri.parse(
+      'http://192.168.3.37:8002/api/agendamentos/?AgendamentoConsultorId=$consultorId',
+    );
+
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-
         setState(() {
           _eventos = data.cast<Map<String, dynamic>>();
         });
-        //print('Resposta: ${response.body}');
-
       } else {
         print('Erro ao buscar agendamentos: ${response.statusCode}');
       }
@@ -41,15 +59,15 @@ class _AgendaScreenState extends State<AgendaScreen> {
       print('Erro na requisição: $e');
     }
   }
-  
+
   List<Map<String, dynamic>> _eventosDoDia(DateTime? diaSelecionado) {
     if (diaSelecionado == null) return [];
 
     return _eventos.where((evento) {
       final dataEvento = DateTime.parse(evento['AgendamentoData']).toLocal();
       return dataEvento.year == diaSelecionado.year &&
-             dataEvento.month == diaSelecionado.month &&
-             dataEvento.day == diaSelecionado.day;
+          dataEvento.month == diaSelecionado.month &&
+          dataEvento.day == diaSelecionado.day;
     }).toList();
   }
 
