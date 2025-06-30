@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/precliente.dart';
 import '../services/precliente_service.dart';
@@ -94,10 +95,27 @@ class _PreclientesScreenState extends State<PreclientesScreen> {
                               }
                             }),
 
-                            _botaoAcao("Transformar em Cliente", Icons.person_add, Colors.green, () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("${ precliente.preclienteNome} foi convertido em cliente!")),
-                              );
+                            _botaoAcao("Transformar em Cliente", Icons.person_add, Colors.green, () async {
+                              print("Convertendo pré-cliente: ${precliente.id}");
+                              final url = Uri.parse('http://192.168.3.37:8000/precliente/convertermobile/${precliente.id}/');
+                              try {
+                                final response = await http.post(url);
+                                print("Resposta da conversão: ${response.statusCode} - ${response.body}");
+                                if (response.statusCode == 200 || response.statusCode == 201) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("${precliente.preclienteNome} foi convertido em cliente!")),
+                                  );
+                                  _recarregar(); // recarrega lista
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("Erro ao converter: ${response.body}")),
+                                  );
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Erro na requisição: $e")),
+                                );
+                              }
                             }),
                           ],
                         ),
@@ -121,6 +139,7 @@ class _PreclientesScreenState extends State<PreclientesScreen> {
           }
         },
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
         tooltip: 'Adicionar Pré-Cliente',
       ),

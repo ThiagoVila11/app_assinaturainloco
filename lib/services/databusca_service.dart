@@ -21,7 +21,7 @@ class APIDataBuscaService {
     };
 
     final response = await http.post(Uri.parse(_loginUrl), headers: headers, body: jsonEncode(payload));
-
+    //print("token response: ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['success'] == true) {
@@ -36,18 +36,18 @@ class APIDataBuscaService {
 
   static Future<Map<String, dynamic>> buscarPorCpf(String cpf) async {
     final token = await _getAuthToken();
-
+    //print(cpf);
     final headers = {
       "Content-Type": "application/json",
       "Token": token,
     };
-
+    //print("headers: $headers");
     final body = {
       "Document": cpf,
     };
-
+    //print("body: $body");
     final response = await http.post(Uri.parse(_dataUrl), headers: headers, body: jsonEncode(body));
-
+    //print("response cpf: ${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {

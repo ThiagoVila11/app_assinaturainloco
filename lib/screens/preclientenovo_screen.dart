@@ -24,10 +24,41 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
   final _avalAutoController = TextEditingController();
   final _avaliacaoController = TextEditingController();
   final _jsonController = TextEditingController();
-  final _condominioController = TextEditingController();
 
   DateTime? _dataVisita;
   bool _salvando = false;
+
+  List<Map<String, dynamic>> _listaCondominios = [];
+  int? _condominioSelecionado;
+  int? _consultorId;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarCondominios();
+    _carregarConsultor();
+  }
+
+  Future<void> _carregarCondominios() async {
+    final url = Uri.parse('http://192.168.3.37:8000/api/condominios/');
+    final response = await http.get(url);
+    print("response condominios: ${response.body}");
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _listaCondominios = List<Map<String, dynamic>>.from(data);
+      });
+    } else {
+      print('Erro ao carregar condomínios: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _carregarConsultor() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _consultorId = prefs.getInt('consultorId');
+    });
+  }
 
   Future<void> _consultarCpf() async {
     final cpf = _cpfController.text.trim();
@@ -35,16 +66,26 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
 
     try {
       final data = await APIDataBuscaService.buscarPorCpf(cpf);
-      final d = data['data'];
+      final d = data['Data'];
+
+      String obs = '';
+      if (d['ActiveDebts'] != null && d['ActiveDebts'].isNotEmpty) {
+        final debito = d['ActiveDebts'][0];
+        final categoria = debito["CategoryName"] ?? '';
+        final descr = debito["Description"] ?? '';
+        final valores = debito["EntryValue"] ?? '';
+        if (categoria.isNotEmpty) {
+          obs = "$categoria / $descr / $valores";
+        }
+      }
 
       setState(() {
         _nomeController.text = d['NameBrasil'] ?? '';
-        //_scoreController.text = d['score']?.toString() ?? '';
-        //_apontamentosController.text = d['apontamentos']?.toString() ?? '';
-        //_rendaPresumidaController.text = d['rendaPresumida']?.toString() ?? '';
-        //_rendaFamiliarController.text = d['rendaFamiliar']?.toString() ?? '';
-        //_avalAutoController.text = d['avaliacaoAutomatica'] ?? '';
-        //_avaliacaoController.text = d['avaliacao'] ?? '';
+        _scoreController.text = d['CreditScore']['D00']?.toString() ?? '';
+        _emailController.text = (d['Emails'] is List && d['Emails'].isNotEmpty) ? d['Emails'][0]['Email'] ?? '' : '';
+        _apontamentosController.text = obs;
+        _rendaPresumidaController.text = d['Income']['Presumed']?.toString() ?? '';
+        _rendaFamiliarController.text = d['Income']['Family']?.toString() ?? '';
         _jsonController.text = jsonEncode(d);
       });
 
@@ -63,10 +104,7 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
 
     setState(() => _salvando = true);
 
-    final prefs = await SharedPreferences.getInstance();
-    final consultorId = prefs.getInt('consultorId');
-
-    if (consultorId == null) {
+    if (_consultorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Consultor não identificado.")),
       );
@@ -90,9 +128,9 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
         "preclienteAvalAuto": _avalAutoController.text.trim(),
         "preclienteAvaliacao": _avaliacaoController.text.trim(),
         "preclienteJson": _jsonController.text.trim(),
-        "preclienteDataVisita": _dataVisita?.toIso8601String(),
-        "preclienteCondominio": int.tryParse(_condominioController.text.trim()),
-        "Consultor": consultorId,
+        "preclienteDataVisita": _dataVisita != null ? _dataVisita!.toIso8601String().split('T')[0] : null,
+        "preclienteCondominio": _condominioSelecionado,
+        "Consultor": _consultorId,
       }),
     );
 
@@ -136,7 +174,6 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
     _avalAutoController.dispose();
     _avaliacaoController.dispose();
     _jsonController.dispose();
-    _condominioController.dispose();
     super.dispose();
   }
 
@@ -154,22 +191,53 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              _campoTexto("Nome", _nomeController),
               _campoTexto("CPF", _cpfController),
               TextButton.icon(
                 icon: const Icon(Icons.search),
                 label: const Text("Consultar CPF"),
                 onPressed: _consultarCpf,
               ),
+              _campoTexto("Nome", _nomeController),
               _campoTexto("Email", _emailController),
               _campoTexto("Score", _scoreController),
-              _campoTexto("Apontamentos", _apontamentosController),
+              _campoTexto("Apontamentos", _apontamentosController, obrigatorio: false),
               _campoTexto("Renda Presumida", _rendaPresumidaController),
               _campoTexto("Renda Familiar", _rendaFamiliarController),
-              _campoTexto("Avaliação Automática", _avalAutoController),
-              _campoTexto("Avaliação", _avaliacaoController),
-              _campoTexto("JSON (opcional)", _jsonController),
-              _campoTexto("ID do Condomínio", _condominioController),
+              if (_consultorId != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: TextFormField(
+                    initialValue: _consultorId.toString(),
+                    decoration: const InputDecoration(
+                      labelText: 'Consultor',
+                      border: OutlineInputBorder(),
+                    ),
+                    enabled: false,
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(
+                    labelText: 'Condomínio',
+                    border: OutlineInputBorder(),
+                  ),
+                  value: _condominioSelecionado,
+                  items: _listaCondominios.map((cond) {
+                    return DropdownMenuItem<int>(
+                      value: cond['id'],
+                      child: Text(cond['condominionome'] ?? 'Sem nome'),
+                    );
+                  }).toList(),
+                  onChanged: (int? novoValor) {
+                    setState(() {
+                      _condominioSelecionado = novoValor;
+                    });
+                  },
+                  validator: (value) =>
+                      value == null ? 'Selecione um condomínio' : null,
+                ),
+              ),
               const SizedBox(height: 12),
               Text("Data da Visita: ${_dataVisita != null ? _dataVisita!.toLocal().toString().split(" ")[0] : 'Nenhuma selecionada'}"),
               TextButton.icon(
@@ -186,6 +254,7 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
                 onPressed: _salvando ? null : _salvar,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -196,7 +265,7 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
     );
   }
 
-  Widget _campoTexto(String label, TextEditingController controller) {
+  Widget _campoTexto(String label, TextEditingController controller, {bool obrigatorio = true}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
@@ -205,7 +274,9 @@ class _PreclienteNovoScreenState extends State<PreclienteNovoScreen> {
           labelText: label,
           border: const OutlineInputBorder(),
         ),
-        validator: (value) => value == null || value.isEmpty ? "Campo obrigatório" : null,
+        validator: obrigatorio
+            ? (value) => value == null || value.isEmpty ? "Campo obrigatório" : null
+            : null,
       ),
     );
   }

@@ -110,6 +110,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
           }
         },
         backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
         tooltip: 'Adicionar Cliente',
       ),
