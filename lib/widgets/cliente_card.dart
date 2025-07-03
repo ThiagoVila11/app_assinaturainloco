@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/cliente.dart';
+import '../screens/clientedetalhe_screen.dart';
+import '../screens/editar_cliente_screen.dart'; // <-- Import da tela de edição
 
 class ClienteCard extends StatelessWidget {
   final Cliente cliente;
@@ -35,28 +37,36 @@ class ClienteCard extends StatelessWidget {
             Text("Contato: ${cliente.telefone} | ${cliente.email}"),
             Text("Local: ${cliente.condominio} - ${cliente.apto}"),
             Text("Score: ${cliente.score} | Processo Finalizado: ${cliente.processofinalizado ? "Sim" : "Não"}"),
-            //Text("Assinar em: ${cliente.enderecoWebhook}"),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                _botaoAcao("Consultar", Icons.search, Colors.blue, () {}),
-                _botaoAcao("Editar", Icons.edit, Colors.orange, () {}),
+                _botaoAcao("Consultar", Icons.search, Colors.blue, () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetalhesClienteScreen(clienteId: cliente.id),
+                    ),
+                  );
+                }),
+                _botaoAcao("Editar", Icons.edit, Colors.orange, () {
+                  _abrirTelaEditarCliente(context);
+                }),
                 _botaoAcao("Gerar Contrato", Icons.description, Colors.purple, () {}),
                 _botaoAcao(
                   "Assinar Contrato",
                   Icons.edit_document,
                   Colors.green,
                   () {
-                      if (cliente.enderecoWebhook != null && cliente.enderecoWebhook!.isNotEmpty) {
-                        _abrirLinkContrato(context, cliente.enderecoWebhook!);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Link de assinatura não disponível.")),
-                        );
-                      }
-                    },
+                    if (cliente.enderecoWebhook.isNotEmpty) {
+                      _abrirLinkContrato(context, cliente.enderecoWebhook);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Link de assinatura não disponível.")),
+                      );
+                    }
+                  },
                 ),
                 _botaoAcao(
                   "Finalizar",
@@ -68,6 +78,15 @@ class ClienteCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _abrirTelaEditarCliente(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditarClienteScreen(cliente: cliente),
       ),
     );
   }
@@ -194,9 +213,6 @@ class ClienteCard extends StatelessWidget {
 
   Future<void> _enviarFinalizacao(BuildContext context, bool finalizado, String observacao) async {
     final url = Uri.parse('http://192.168.3.37:8000/api/crudclientes/${cliente.id}/');
-    print("Enviando finalização para $url");
-    print("Dados enviados: processoFinalizado=$finalizado, observacao=$observacao");
-
     final response = await http.patch(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -205,8 +221,6 @@ class ClienteCard extends StatelessWidget {
         "observacoes": observacao,
       }),
     );
-
-    print("Resposta do servidor: ${response.statusCode} - ${response.body}");
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       ScaffoldMessenger.of(context).showSnackBar(

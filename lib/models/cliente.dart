@@ -14,8 +14,8 @@ class Cliente {
   final String nomeresidente;
   final String cpfresidente;
   final String rgresidente;
-  final String enderecoresidente;
-  final String profissaoresidente;
+  final String? enderecoresidente;
+  final String? profissaoresidente;
   final String estadocivilresidente;
   final String celularresidente;
   final String emailresidente;
@@ -31,22 +31,22 @@ class Cliente {
   final String vrunidade;
   final String prazocontrato;
   final DateTime iniciocontrato;
-  final DateTime terminocontrato;
-  final String? visitarealizada;
+  final DateTime? terminocontrato;
+  final bool visitarealizada;
   final String? documentacaoenviada;
   final int? condominio;
   final String? apartamento;
-  final String? consultor;
-  final String? preCliente;
+  final int? consultor;
+  final int? preCliente;
   final String? percentualdesconto;
   final DateTime? datainiciodesconto;
   final DateTime? dataterminodesconto;
-  final bool? isencaomulta;
-  final String? documentacaoassinada;
+  final bool isencaomulta;
+  final bool documentacaoassinada;
   final DateTime? datahoraassinatura;
-  final String? statusassinatura;
+  final String statusassinatura;
   final int? processoAssinaturaId;
-  final String? enderecoWebhook;
+  final String enderecoWebhook;
   final bool processofinalizado;
 
   Cliente({
@@ -112,53 +112,53 @@ class Cliente {
       email: json['email'] ?? '',
       telefone: json['telefone'] ?? '',
       endereco: json['endereco'] ?? '',
-      data_nascimento: DateTime.parse(json['data_nascimento'] ?? '1970-01-01'),
+      data_nascimento: DateTime.tryParse(json['data_nascimento'] ?? '') ?? DateTime(1970),
       observacoes: json['observacoes'] ?? '',
-      data_cadastro: DateTime.parse(json['data_cadastro'] ?? '1970-01-01'),
+      data_cadastro: DateTime.tryParse(json['data_cadastro'] ?? '') ?? DateTime(1970),
       nomeresidente: json['nomeresidente'] ?? '',
       cpfresidente: json['cpfresidente'] ?? '',
       rgresidente: json['rgresidente'] ?? '',
-      enderecoresidente: json['enderecoresidente'] ?? '',
-      profissaoresidente: json['profissaoresidente'] ?? '',
+      enderecoresidente: json['enderecoresidente']?.toString(),
+      profissaoresidente: json['profissaoresidente']?.toString(),
       estadocivilresidente: json['estadocivilresidente'] ?? '',
       celularresidente: json['celularresidente'] ?? '',
       emailresidente: json['emailresidente'] ?? '',
-      score: json['score'] ?? '',
+      score: json['score']?.toString() ?? '',
       unidade: json['unidade'] ?? '',
-      apto: json['apto'] ?? '',
+      apto: json['apto']?.toString() ?? '',
       nomeunidade: json['nomeunidade'] ?? '',
       cnpjunidade: json['cnpjunidade'] ?? '',
       matriculaunidade: json['matriculaunidade'] ?? '',
-      vagaunidade: json['vagaunidade'] ?? '',
+      vagaunidade: json['vagaunidade']?.toString() ?? '',
       enderecounidade: json['enderecounidade'] ?? '',
       nriptuunidade: json['nriptuunidade'] ?? '',
-      vrunidade: json['vrunidade'] ?? '',
-      prazocontrato: json['prazocontrato'] ?? '',
-      iniciocontrato: DateTime.parse(json['iniciocontrato'] ?? '1970-01-01'),
-      terminocontrato: DateTime.parse(json['terminocontrato'] ?? '1970-01-01'),
-      visitarealizada: json['visitarealizada'] ?? '',
-      documentacaoenviada: json['documentacaoenviada'] ?? '',
-      condominio: json['condominio'] != null ? int.tryParse(json['condominio'].toString()) : null,
-      apartamento: json['apartamento'] ?? '',
-      consultor: json['consultor'] ?? '',
-      preCliente: json['preCliente'] ?? '',
-      percentualdesconto: json['percentualdesconto'] ?? '',
+      vrunidade: json['vrunidade']?.toString() ?? '',
+      prazocontrato: json['prazocontrato']?.toString() ?? '',
+      iniciocontrato: DateTime.tryParse(json['iniciocontrato'] ?? '') ?? DateTime(1970),
+      terminocontrato: json['terminocontrato'] != null
+          ? DateTime.tryParse(json['terminocontrato'])
+          : null,
+      visitarealizada: json['visitarealizada'] ?? false,
+      documentacaoenviada: json['documentacaoenviada']?.toString(),
+      condominio: json['Condominio'],
+      apartamento: json['Apartamento']?.toString(),
+      consultor: json['Consultor'],
+      preCliente: json['PreCliente'],
+      percentualdesconto: json['percentualdesconto']?.toString(),
       datainiciodesconto: json['datainiciodesconto'] != null
-          ? DateTime.parse(json['datainiciodesconto'])
+          ? DateTime.tryParse(json['datainiciodesconto'])
           : null,
       dataterminodesconto: json['dataterminodesconto'] != null
-          ? DateTime.parse(json['dataterminodesconto'])
+          ? DateTime.tryParse(json['dataterminodesconto'])
           : null,
       isencaomulta: json['isencaomulta'] ?? false,
-      documentacaoassinada: json['documentacaoassinada'] ?? '',
+      documentacaoassinada: json['documentacaoassinada'] ?? false,
       datahoraassinatura: json['datahoraassinatura'] != null
-          ? DateTime.parse(json['datahoraassinatura'])
+          ? DateTime.tryParse(json['datahoraassinatura'])
           : null,
       statusassinatura: json['statusassinatura'] ?? '',
-      processoAssinaturaId: json['processoAssinaturaId'] != null
-          ? int.tryParse(json['processoAssinaturaId'].toString())
-          : null, 
-      enderecoWebhook: json['enderecoWebhook'] ?? '',
+      processoAssinaturaId: json['processoassinaturaid'],
+      enderecoWebhook: json['enderecowebhook'] ?? '',
       processofinalizado: json['processofinalizado'] ?? false,
     );
   }

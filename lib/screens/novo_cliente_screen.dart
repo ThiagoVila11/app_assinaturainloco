@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:clientes_app/services/databusca_service.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../services/api_service.dart';
 import '../models/cliente.dart';
+
 
 class NovoClienteScreen extends StatefulWidget {
   @override
@@ -20,10 +24,34 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
   final _telefoneController = TextEditingController();
   final _aptoController = TextEditingController();
   final _scoreController = TextEditingController(text: '0');
+  final _enderecoController = TextEditingController();
+  final _dataNascimentoController = TextEditingController();
+  final _nomeResidenteController = TextEditingController();
+  final _cpfResidenteController = TextEditingController();
+  final _rgResidenteController = TextEditingController();
+  final _enderecoResidenteController = TextEditingController();
+  final _profissaoResidenteController = TextEditingController();
+  final _estadoCivilResidenteController = TextEditingController();
+  final _celularResidenteController = TextEditingController();
+  final _emailResidenteController = TextEditingController();
+  final _consultorController = TextEditingController();
+  final _condominioController = TextEditingController();
+  final _matriculaController = TextEditingController();
+  final _vagasController = TextEditingController();
+  final _enderecoUnidadeController = TextEditingController();
+  final _iptuController = TextEditingController();
+  final _valorController = TextEditingController();
+  final _inicioContratoController = TextEditingController();
+  final _prazoContratoController = TextEditingController();
+  final _percentualDescontoController = TextEditingController();
+  final _dataInicioDescontoController = TextEditingController();
+  final _dataTerminoDescontoController = TextEditingController();
+  final _observacoesController = TextEditingController();
+
+  bool _isSalvando = false;
+  bool _isencaoMulta = false;
 
   String? _estadoCivilSelecionado;
-  bool _isSalvando = false;
-
   final List<String> _opcoesEstadoCivil = [
     'Solteiro(a)',
     'Casado(a)',
@@ -32,8 +60,25 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
     'Separado(a) judicialmente',
   ];
 
+  final _cpfFormatter = MaskTextInputFormatter(mask: '###.###.###-##', filter: {"#": RegExp(r'[0-9]')});
+  final _telefoneFormatter = MaskTextInputFormatter(mask: '(##) #####-####', filter: {"#": RegExp(r'[0-9]')});
+  final _dataFormatter = MaskTextInputFormatter(mask: '##/##/####', filter: {"#": RegExp(r'[0-9]')});
+  final _valorFormatter = MaskTextInputFormatter(mask: '#######.##', filter: {"#": RegExp(r'[0-9]')});
+
+  Future<void> _selecionarData(BuildContext context, TextEditingController controller) async {
+    DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      controller.text = DateFormat('dd/MM/yyyy').format(picked);
+    }
+  }
+
   Future<void> _consultarCpf() async {
-    final cpf = _cpfController.text.trim();
+    final cpf = _cpfController.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (cpf.isEmpty || cpf.length != 11) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Informe um CPF válido com 11 dígitos.")),
@@ -51,8 +96,7 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
             ? d['Emails'][0]['Email'] ?? ''
             : '';
         _telefoneController.text = '';
-        _scoreController.text =
-            d['CreditScore']?['D00']?.toString() ?? '0';
+        _scoreController.text = d['CreditScore']?['D00']?.toString() ?? '0';
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -62,75 +106,6 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erro ao buscar dados: $e")),
       );
-    }
-  }
-
-  Future<void> _salvarCliente() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isSalvando = true);
-
-      Cliente novoCliente = Cliente(
-        id: 0,
-        nome: _nomeController.text.trim(),
-        cpf: _cpfController.text.trim(),
-        profissao: _profissaoController.text.trim(),
-        estcivil: _estadoCivilSelecionado ?? 'Solteiro(a)',
-        rgrne: _rgRneController.text.trim(),
-        email: _emailController.text.trim(),
-        telefone: _telefoneController.text.trim(),
-        endereco: '',
-        data_nascimento: DateTime.now(),
-        observacoes: '',
-        data_cadastro: DateTime.now(),
-        nomeresidente: '',
-        cpfresidente: '',
-        rgresidente: '',
-        enderecoresidente: '',
-        profissaoresidente: '',
-        estadocivilresidente: '',
-        celularresidente: '',
-        emailresidente: '',
-        score: _scoreController.text.trim(),
-        unidade: 'BEL',
-        apto: _aptoController.text.trim(),
-        nomeunidade: '',
-        cnpjunidade: '',
-        matriculaunidade: '',
-        vagaunidade: '',
-        enderecounidade: '',
-        nriptuunidade: '',
-        vrunidade: '',
-        prazocontrato: '',
-        iniciocontrato: DateTime.now(),
-        terminocontrato: DateTime.now(),
-        visitarealizada: null,
-        documentacaoenviada: null,
-        condominio: null,
-        apartamento: null,
-        consultor: null,
-        preCliente: null,
-        percentualdesconto: null,
-        datainiciodesconto: null,
-        dataterminodesconto: null,
-        isencaomulta: false,
-        documentacaoassinada: null,
-        datahoraassinatura: null,
-        statusassinatura: null,
-        processoAssinaturaId: null,
-        enderecoWebhook: null,
-        processofinalizado: false,
-      );
-
-      try {
-        await ApiService.addCliente(novoCliente);
-        Navigator.pop(context, true);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar cliente: $e')),
-        );
-      } finally {
-        setState(() => _isSalvando = false);
-      }
     }
   }
 
@@ -144,6 +119,29 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
     _telefoneController.dispose();
     _aptoController.dispose();
     _scoreController.dispose();
+    _enderecoController.dispose();
+    _dataNascimentoController.dispose();
+    _nomeResidenteController.dispose();
+    _cpfResidenteController.dispose();
+    _rgResidenteController.dispose();
+    _enderecoResidenteController.dispose();
+    _profissaoResidenteController.dispose();
+    _estadoCivilResidenteController.dispose();
+    _celularResidenteController.dispose();
+    _emailResidenteController.dispose();
+    _consultorController.dispose();
+    _condominioController.dispose();
+    _matriculaController.dispose();
+    _vagasController.dispose();
+    _enderecoUnidadeController.dispose();
+    _iptuController.dispose();
+    _valorController.dispose();
+    _inicioContratoController.dispose();
+    _prazoContratoController.dispose();
+    _percentualDescontoController.dispose();
+    _dataInicioDescontoController.dispose();
+    _dataTerminoDescontoController.dispose();
+    _observacoesController.dispose();
     super.dispose();
   }
 
@@ -164,97 +162,72 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
               Row(
                 children: [
                   Expanded(
-                    flex: 3,
                     child: TextFormField(
                       controller: _cpfController,
+                      inputFormatters: [_cpfFormatter],
                       decoration: const InputDecoration(labelText: 'CPF'),
                       keyboardType: TextInputType.number,
                       validator: (value) =>
-                          value == null || value.length != 11
-                              ? 'CPF inválido'
-                              : null,
+                          value == null || value.length < 11 ? 'CPF inválido' : null,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton.icon(
-                      onPressed: _consultarCpf,
-                      icon: const Icon(Icons.search),
-                      label: const Text("Consultar"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                      ),
+                  ElevatedButton.icon(
+                    onPressed: _consultarCpf,
+                    icon: const Icon(Icons.search),
+                    label: const Text("Consultar"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _nomeController,
-                decoration: const InputDecoration(labelText: 'Nome'),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Informe o nome' : null,
+              _buildTextField(_nomeController, 'Nome'),
+              _buildTextField(_profissaoController, 'Profissão'),
+              _buildDropdownEstadoCivil(),
+              _buildTextField(_rgRneController, 'RG/RNE'),
+              _buildTextField(_emailController, 'Email', keyboardType: TextInputType.emailAddress),
+              _buildTextField(_telefoneController, 'Telefone', inputFormatters: [_telefoneFormatter], keyboardType: TextInputType.phone),
+              _buildTextField(_enderecoController, 'Endereço'),
+              _buildDateField(context, _dataNascimentoController, 'Data de Nascimento'),
+              _buildTextField(_aptoController, 'Apartamento'),
+              _buildTextField(_scoreController, 'Score'),
+              const Divider(),
+              const Text('Dados do Residente', style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildTextField(_nomeResidenteController, 'Nome do Residente'),
+              _buildTextField(_cpfResidenteController, 'CPF do Residente', inputFormatters: [_cpfFormatter]),
+              _buildTextField(_rgResidenteController, 'RG do Residente'),
+              _buildTextField(_enderecoResidenteController, 'Endereço do Residente'),
+              _buildTextField(_profissaoResidenteController, 'Profissão do Residente'),
+              _buildTextField(_estadoCivilResidenteController, 'Estado Civil do Residente'),
+              _buildTextField(_celularResidenteController, 'Celular do Residente', inputFormatters: [_telefoneFormatter]),
+              _buildTextField(_emailResidenteController, 'Email do Residente'),
+              const Divider(),
+              const Text('Unidade e Contrato', style: TextStyle(fontWeight: FontWeight.bold)),
+              _buildTextField(_consultorController, 'Consultor'),
+              _buildTextField(_condominioController, 'Condomínio'),
+              _buildTextField(_matriculaController, 'Matrícula'),
+              _buildTextField(_vagasController, 'Vagas'),
+              _buildTextField(_enderecoUnidadeController, 'Endereço da Unidade'),
+              _buildTextField(_iptuController, 'Número do IPTU'),
+              _buildTextField(_valorController, 'Valor', inputFormatters: [_valorFormatter], keyboardType: TextInputType.number),
+              _buildDateField(context, _inicioContratoController, 'Início do Contrato'),
+              _buildTextField(_prazoContratoController, 'Prazo do Contrato'),
+              SwitchListTile(
+                title: const Text('Isenção de Multa'),
+                value: _isencaoMulta,
+                onChanged: (value) => setState(() => _isencaoMulta = value),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _profissaoController,
-                decoration: const InputDecoration(labelText: 'Profissão'),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _estadoCivilSelecionado,
-                items: _opcoesEstadoCivil.map((estado) {
-                  return DropdownMenuItem(
-                    value: estado,
-                    child: Text(estado),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _estadoCivilSelecionado = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Estado Civil',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    value == null ? 'Selecione o estado civil' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _rgRneController,
-                decoration: const InputDecoration(labelText: 'RG/RNE'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _telefoneController,
-                decoration: const InputDecoration(labelText: 'Telefone'),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _aptoController,
-                decoration: const InputDecoration(labelText: 'Apartamento'),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _scoreController,
-                decoration: const InputDecoration(labelText: 'Score'),
-              ),
+              _buildTextField(_percentualDescontoController, 'Percentual de Desconto'),
+              _buildDateField(context, _dataInicioDescontoController, 'Data de Início do Desconto'),
+              _buildDateField(context, _dataTerminoDescontoController, 'Data de Término do Desconto'),
+              _buildTextField(_observacoesController, 'Observações', maxLines: 3),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: _isSalvando ? null : _salvarCliente,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
-                ),
+                onPressed: _isSalvando ? null : () {},
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple, foregroundColor: Colors.white,),
                 child: _isSalvando
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Salvar'),
@@ -265,4 +238,54 @@ class _NovoClienteScreenState extends State<NovoClienteScreen> {
       ),
     );
   }
+
+  Widget _buildTextField(TextEditingController controller, String label, {
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        maxLines: maxLines,
+        decoration: InputDecoration(labelText: label),
+      ),
+    );
+  }
+
+  Widget _buildDateField(BuildContext context, TextEditingController controller, String label) {
+    return GestureDetector(
+      onTap: () => _selecionarData(context, controller),
+      child: AbsorbPointer(
+        child: _buildTextField(
+          controller,
+          label,
+          keyboardType: TextInputType.datetime,
+          inputFormatters: [_dataFormatter],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownEstadoCivil() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: DropdownButtonFormField<String>(
+        value: _estadoCivilSelecionado,
+        decoration: const InputDecoration(labelText: 'Estado Civil'),
+        items: _opcoesEstadoCivil.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (value) => setState(() => _estadoCivilSelecionado = value),
+        validator: (value) => value == null ? 'Campo obrigatório' : null,
+      ),
+    );
+  }
+
 }
